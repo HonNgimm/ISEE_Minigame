@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>ISEE - MiniGame</title>
+  <link rel="shortcut icon" href="./icon.png" type="image/x-icon">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&display=swap');
+
+    body {
+      font-family: 'Baloo 2', 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: url('bg-midautumn.png') no-repeat center center fixed;
+      background-size: cover;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* 🌕 Ánh trăng */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 100px;
+      right: 150px;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle at 40% 40%, #fffbe0, #ffd76b, #ffb347);
+      border-radius: 50%;
+      box-shadow: 0 0 60px 20px rgba(255, 230, 150, 0.5);
+      z-index: 0;
+      animation: moonGlow 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes moonGlow {
+      from { opacity: 0.8; transform: scale(1); }
+      to { opacity: 1; transform: scale(1.05); }
+    }
+
+    /* 🌸 Layout */
+    .main-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 400px 200px 40px;
+      transition: all 0.5s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    .left-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* 🔘 Nút quay */
+    #quayButton {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      font-size: 22px;
+      font-weight: 700;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #ff5f6d, #ffc371);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(255, 150, 50, 0.4);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #quayButton::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -50%;
+      width: 50%; height: 100%;
+      background: rgba(255,255,255,0.3);
+      transform: skewX(-25deg);
+      animation: lightSweep 2.5s infinite linear;
+    }
+
+    @keyframes lightSweep {
+      0% { left: -50%; }
+      100% { left: 120%; }
+    }
+
+    #quayButton:hover {
+      background: linear-gradient(135deg, #ff3d3d, #ffb347);
+      transform: scale(1.05);
+      box-shadow: 0 10px 20px rgba(255, 150, 50, 0.6);
+    }
+
+    /* 🎯 Kết quả */
+    .display-wrapper {
+      position: relative;
+      padding: 6px;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(255, 200, 0, 0.6);
+      background: rgba(255,255,255,0.9);
+    }
+
+    .display-wrapper::before {
+      content: '';
+      position: absolute;
+      top: -4px; left: -4px; right: -4px; bottom: -4px;
+      background: linear-gradient(45deg, red, orange, gold, lime, cyan, blue, violet, red);
+      background-size: 400%;
+      animation: borderRainbow 12s linear infinite;
+      z-index: -1;
+      border-radius: 22px;
+      filter: blur(5px);
+    }
+
+    @keyframes borderRainbow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 400% 50%; }
+    }
+
+    #display {
+      background: rgba(255, 255, 255, 0.88);
+      padding: 20px 40px;
+      border-radius: 16px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #b03030;
+      text-align: center;
+      min-width: 320px;
+      min-height: 100px;
+      transition: all 0.2s ease;
+    }
+
+    /* 🧧 Danh sách */
+    .right-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.5s ease;
+    }
+
+    .centered {
+      margin: 0 auto;
+      align-items: center !important;
+    }
+
+    #winnersList {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .winner-section {
+      text-align: center;
+      margin-bottom: 10px;
+      animation: fadeIn 0.8s ease;
+    }
+
+    .winner-title {
+      font-size: 28px;
+      font-weight: 800;
+      padding: 10px 25px;
+      border-radius: 16px;
+      display: inline-block;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 3px rgba(255,255,255,0.7);
+    }
+
+    .title-dacbiet {
+      background: linear-gradient(90deg, #ffefba, #ffd700);
+      color: #6b3900;
+      border: 2px solid #ffe066;
+    }
+
+    .title-mayman {
+      background: linear-gradient(90deg, #00f260, #0575e6);
+      color: #fff;
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+
+    .winner-box {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      min-width: 130px;
+      text-align: center;
+    }
+
+    .winner-box:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 8px 14px rgba(0,0,0,0.25);
+    }
+
+    .dacbiet-box { border: 2px solid gold; background: #fffbea; color: #b8860b; }
+    .mayman-box { border: 1px solid #00b894; background: #eafff6; color: #065f46; }
+
+    .winner-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px 40px;
+    }
+
+    .mayman-grid { display: flex; flex-direction: column; gap: 16px; align-items: center; }
+    .mayman-row { display: flex; gap: 20px; justify-content: center; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ⚙️ Thanh dưới */
+    #bottomBar {
+      position: fixed;
+      bottom: 10px;
+      right: -70px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    #bottomBar button {
+      background: linear-gradient(90deg, #f6d365, #fda085);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: 0.3s;
+    }
+
+    #bottomBar button:hover {
+      background: linear-gradient(90deg, #ff9966, #ff5e62);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-container" id="mainContainer">
+    <div class="left-area" id="leftArea">
+      <button id="quayButton" onclick="quaySo()">QUAY</button>
+      <div class="display-wrapper" id="displayWrapper">
+        <div id="display"></div>
+      </div>
+    </div>
+
+    <div class="right-area" id="rightArea">
+      <div id="winnersList"></div>
+    </div>
+  </div>
+
+  <div id="bottomBar">
+    <button onclick="xuatKetQua()">📁 Xuất kết quả</button>
+    <input type="file" id="fileInput" accept=".xlsx">
+  </div>
+
+  <!-- AUDIO -->
+  <audio id="bgMusic" src="audio1.mp3" loop autoplay></audio>
+  <audio id="spinSound" src="audio2.mp3"></audio>
+  <audio id="finishOneSound" src="audio3.mp3"></audio>
+  <audio id="finishAllSound" src="audio4.mp3"></audio>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const bg = document.getElementById("bgMusic");
+      bg.volume = 0.4;
+      bg.play().catch(() => {
+        document.body.addEventListener('click', () => bg.play(), { once: true });
+      });
+    });
+
+    let danhSach = [], dacBiet = [], mayMan = [], phase = "dacBiet", fireworksInterval = null;
+
+    function renderWinnersList() {
+      let htmlDB = `
+        <div class="winner-section">
+          <div class="winner-title title-dacbiet">🏆 Giải Đặc Biệt 🏆</div>
+          <div class="winner-grid">
+      `;
+      for (let i = 0; i < 3; i++) {
+        const sv = dacBiet[i];
+        htmlDB += `<div class="winner-box dacbiet-box">${sv ? "🥇 " + sv.mssv + "<br>" + sv.hoTen : "🥇 ..."}</div>`;
+      }
+      htmlDB += `</div></div>`;
+
+      let htmlMM = "";
+      if (phase === "mayMan" || mayMan.length > 0) {
+        htmlMM = `
+          <div class="winner-section">
+            <div class="winner-title title-mayman">🍀 Giải May Mắn 🍀</div>
+            <div class="mayman-grid">
+              <div class="mayman-row">
+        `;
+        for (let i = 0; i < 4; i++) {
+          const sv = mayMan[i];
+          htmlMM += `<div class="winner-box mayman-box">${sv ? "🎖️ " + sv.mssv + "<br>" + sv.hoTen : "🎖️ ..."}</div>`;
+        }
+        htmlMM += `</div><div class="mayman-row">`;
+        for (let i = 4; i < 7; i++) {
+          const sv = mayMan[i];
+          htmlMM += `<div class="winner-box mayman-box">${sv ? "🎖️ " + sv.mssv + "<br>" + sv.hoTen : "🎖️ ..."}</div>`;
+        }
+        htmlMM += `</div></div></div>`;
+      }
+      document.getElementById("winnersList").innerHTML = htmlDB + htmlMM;
+    }
+
+    document.getElementById('fileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const data = new Uint8Array(ev.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        danhSach = jsonData.filter(r => r.length >= 2).map(r => ({ mssv: String(r[0]).trim(), hoTen: String(r[1]).trim() }));
+        dacBiet = []; mayMan = []; phase = "dacBiet";
+        document.getElementById('display').innerText = "";
+        renderWinnersList();
+        alert("Đã tải " + danhSach.length + " người.");
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    function smallFireworks() {
+      confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, scalar: 0.75 });
+    }
+
+    function loopFireworks() {
+      if (fireworksInterval) clearInterval(fireworksInterval);
+      fireworksInterval = setInterval(() => {
+        confetti({
+          particleCount: 40,
+          spread: 100,
+          origin: { y: Math.random() * 0.5 + 0.3 },
+          colors: ['#ff0', '#0ff', '#f0f', '#0f0', '#ff6600']
+        });
+      }, 600);
+      setTimeout(() => clearInterval(fireworksInterval), 10000);
+    }
+
+    function quaySo() {
+      const bg = document.getElementById("bgMusic");
+      bg.pause();
+
+      const spinSound = document.getElementById("spinSound");
+      spinSound.play();
+
+      const conLai = danhSach.filter(sv =>
+        !dacBiet.some(t => t.mssv === sv.mssv) &&
+        !mayMan.some(t => t.mssv === sv.mssv)
+      );
+      if (conLai.length === 0) return alert("Hết thí sinh để quay!");
+
+      const display = document.getElementById('display');
+      let step = 0, totalStep = 100, lastPicked = null;
+
+      function showNext() {
+        const progress = step / totalStep;
+        const delay = 20 + 150 * Math.pow(progress, 3);
+        const picked = conLai[Math.floor(Math.random() * conLai.length)];
+        lastPicked = picked;
+
+        // 💡 Trong lúc quay — giữ màu chữ đỏ nâu đồng bộ
+        display.innerHTML = `
+          <div style="font-size:22px;color:#b03030;">${lastPicked.mssv}</div>
+          <div style="font-size:22px;color:#b03030;">${lastPicked.hoTen}</div>
+        `;
+
+        step++;
+        if (step < totalStep) setTimeout(showNext, delay);
+        else {
+          // ✅ Khi dừng quay mới hiện "Xin chúc mừng"
+          spinSound.pause(); spinSound.currentTime = 0;
+          document.getElementById("finishOneSound").play();
+
+          display.innerHTML = `
+            <div style="color:#ff0066; font-size: 26px;">🎉 XIN CHÚC MỪNG 🎉</div>
+            <div style="color:#b03030;">${lastPicked.mssv}</div>
+            <div style="color:#b03030;">${lastPicked.hoTen}</div>
+          `;
+
+          if (phase === "dacBiet") {
+            dacBiet.push(lastPicked);
+            if (dacBiet.length >= 3) phase = "mayMan";
+          } else mayMan.push(lastPicked);
+
+          renderWinnersList();
+          smallFireworks();
+
+          if (dacBiet.length >= 3 && mayMan.length >= 7) {
+            document.getElementById("displayWrapper").style.display = "none";
+            document.getElementById("leftArea").style.display = "none";
+            document.getElementById("rightArea").classList.add("centered");
+            document.getElementById("mainContainer").style.justifyContent = "center";
+            document.getElementById("finishAllSound").play();
+            loopFireworks();
+          }
+        }
+      }
+      showNext();
+    }
+
+    function xuatKetQua() {
+      if (dacBiet.length === 0 && mayMan.length === 0)
+        return alert("Chưa có kết quả!");
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dacBiet), "Giải Đặc Biệt");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mayMan), "Giải May Mắn");
+      XLSX.writeFile(wb, "KetQuaTrungThu.xlsx");
+    }
+  </script>
+</body>
+</html>
